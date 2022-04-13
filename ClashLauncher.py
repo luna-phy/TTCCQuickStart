@@ -34,6 +34,8 @@ class ClashLauncher:
         if district not in self.districts:
             print('\'{}\' is not a valid district, choosing random district'.format(district))
             self.targetDistrict = ''
+        else:
+            self.targetDistrict = self.districts.get(district)    
 
         self.targetAccount = accID
         
