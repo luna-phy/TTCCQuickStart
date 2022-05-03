@@ -45,7 +45,8 @@ while not userInput.lower() == 'quit':
 
         launcher = ClashLauncher(acc, toon, district)
 
-        while launcher.connect():
+        while True:
+            launcher.connect()
             print('Reconnect?')
             userInput = input('Y/N >> ')
             if not userInput.lower() == 'y':
