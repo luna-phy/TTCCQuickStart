@@ -57,7 +57,7 @@ class ClashLauncher:
         if self.targetDistrict == '':
             print('Specified district does not exist, using random district.')
 
-        self.targetToonID = toonID            
+        self.targetToonID = str(toonID) if (-1 < toonID < 6) else ''
 
     def connect(self) -> bool:
         username = self.targetAccount['username']
@@ -69,7 +69,7 @@ class ClashLauncher:
 
             print('Login success. Server gave token {} ({})'.format(cookie, response['friendlyreason']))
 
-            subprocess.run(self.gamePath + 'CorporateClash.exe', cwd = self.gamePath, env = dict(os.environ, TT_GAMESERVER = self.gameserver, TT_PLAYCOOKIE = cookie, FORCE_TOON_SLOT = str(self.targetToonID), FORCE_DISTRICT = str(self.targetDistrict)))
+            subprocess.run(self.gamePath + 'CorporateClash.exe', cwd = self.gamePath, env = dict(os.environ, TT_GAMESERVER = self.gameserver, TT_PLAYCOOKIE = cookie, FORCE_TOON_SLOT = self.targetToonID, FORCE_DISTRICT = str(self.targetDistrict)))
             return True
         else:
             print('Login failed. Server gave server code {} ({})'.format(response['reason'], response['friendlyreason']))
