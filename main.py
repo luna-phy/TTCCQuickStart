@@ -39,11 +39,11 @@ while not userInput.lower() == 'quit':
         
         toon: str = input('Toon ID >> ')
         if not toon.isnumeric():
-            toon = '-1'
+            toon = -1
 
         district: str = input('Target District >> ')
 
-        launcher = ClashLauncher(acc, toon, district)
+        launcher = ClashLauncher(int(acc), int(toon), district)
 
         while True:
             launcher.connect()
@@ -53,7 +53,7 @@ while not userInput.lower() == 'quit':
                 break
     elif userInput.lower() in {'update', 'patch'}:
         print('Checking for update...')
-        if not updated and not patcher.isGameUpdated():
+        if not patcher.isGameUpdated():
             print('Local files are old, update them?')
             userInput: str = input('Y/N >> ')
             
@@ -64,6 +64,24 @@ while not userInput.lower() == 'quit':
         else:
             updated = True
             print('Game is already up-to-date.')
+    elif userInput.lower() == 'updateloop':
+        while(True):
+            from datetime import datetime
+
+            now = datetime.now()
+
+            current_time = now.strftime("%H:%M:%S")
+            print(current_time, '| Checking for update (loop)...')
+            if not patcher.isGameUpdated():
+                print('Local files are old, update them?')
+                userInput: str = input('Y/N >> ')
+                
+                if userInput.lower() == 'y':
+                    updated = True
+                    patcher.run()
+                    print('Game has been updated.')
+                    
+                break
     elif userInput.lower() == 'help':
         print('Corporate Clash Launcher by luna#4811\n\tlogin - Login to the game.\n\tpatch - Update game files.\n\thelp - Display this text.\n\tquit - Exit the program.')
     elif userInput == '':

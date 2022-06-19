@@ -58,7 +58,7 @@ class ClashPatcher:
 
     def isGameUpdated(self) -> bool:
         self.getPatchManifest()
-        self.checkLocalFiles(False)
+        self.checkLocalFiles(True)
 
         value = not self.filesNeeded
 
@@ -157,7 +157,9 @@ class ClashPatcher:
             else:
                 os.mkdir(localDir)
 
-            os.replace(self.gameDirectory + file.fileName, self.gameDirectory + file.filePath)        
+            os.replace(self.gameDirectory + file.fileName, self.gameDirectory + file.filePath)  
+        self.patchManifest.clear()
+        self.filesNeeded.clear()      
 
     def run(self):
         print('Fetching new patch manifest')
