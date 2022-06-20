@@ -4,9 +4,9 @@ from ClashPatcher import ClashPatcher
 import argparse, sys
 ap = argparse.ArgumentParser(prog = 'launcher', description = 'Command-Line Launcher for Corporate Clash, by luna#4811', allow_abbrev = False)
 
-ap.add_argument('--account', '-a', type = int, required = False, help = "Specifies an account to use to log in.")
-ap.add_argument('--toon', '-t', type = int, required = False, help = "Specifies a toon, by index, to use to log in. 0 is top left, 5 is bottom right.")
-ap.add_argument('--district', '-d', type = str, required = False, help = "Specifies a target district to log into. No district will launch the main menu page.")
+ap.add_argument('--account', '-a', type = int, help = "Specifies an account to use to log in.")
+ap.add_argument('--toon', '-t', type = int, help = "Specifies a toon, by index, to use to log in. 0 is top left, 5 is bottom right.")
+ap.add_argument('--district', '-d', type = str, help = "Specifies a target district to log into. No district will launch the main menu page. Use '--district any' to guarantee a random district.")
 
 up = ap.add_mutually_exclusive_group()
 up.add_argument('--forceupdate', '-fu', action = 'store_true', help = "Launch the game after forcing an update check.")
@@ -23,7 +23,9 @@ if args.account is not None:
     dist = ''
     if args.toon is not None:
         toon = args.toon
-    if args.district is not None:
+    if args.district.lower() == 'any':
+        dist = ''
+    elif args.district is not None:
         dist = args.district
 
     if args.forceupdate:
