@@ -1,88 +1,56 @@
 from ClashLauncher import ClashLauncher
 from ClashPatcher import ClashPatcher
 
-import sys
+import argparse, sys
+ap = argparse.ArgumentParser(prog = 'launcher', description = 'Command-Line Launcher for Corporate Clash, by luna#4811', allow_abbrev = False)
 
-if len(sys.argv) > 1:
-    print('Logging in through Command-Line, bypassing update check')
-    launcher = ClashLauncher(*sys.argv[1:])
-    launcher.connect()
+ap.add_argument('--account', '-a', type = int, required = False, help = "Specifies an account to use to log in.")
+ap.add_argument('--toon', '-t', type = int, required = False, help = "Specifies a toon, by index, to use to log in. 0 is top left, 5 is bottom right.")
+ap.add_argument('--district', '-d', type = str, required = False, help = "Specifies a target district to log into. No district will launch the main menu page.")
+
+up = ap.add_mutually_exclusive_group()
+up.add_argument('--forceupdate', '-fu', action = 'store_true', help = "Launch the game after forcing an update check.")
+up.add_argument('--update', '-u', action = 'store_true', help = "Update the game. Does not launch it afterwards.")
+up.add_argument('--updateloop', '-ul', action = 'store_true', help = "Continuously check the game for updates, runs until stopped, or an update is found.")
+
+args = ap.parse_args()
+
+pa = ClashPatcher()
+
+if args.account is not None:
+    ac = args.account
+    toon = -1
+    dist = ''
+    if args.toon is not None:
+        toon = args.toon
+    if args.district is not None:
+        dist = args.district
+
+    if args.forceupdate:
+        pa.run()
+
+    ClashLauncher(ac, toon, dist).connect()
     sys.exit()
+if args.toon:
+    print('Warning: Toon was specified without an account, ignoring.')
+if args.district:
+    print('Warning: District was specified without an account, ignoring.')
 
-patcher = ClashPatcher()
-updated = False
-
-userInput: str = ''
-while not userInput.lower() == 'quit':
-    userInput: str = input('>> ')
-    if userInput.lower() == 'login':
-        if not updated:
-            print('Check for Game Updates?')
-            userInput: str = input('Y/N >> ')
-            
-            if userInput.lower() == 'y':   
-                if patcher.isGameUpdated():
-                    updated = True
-                    print('Game files are fully up-to-date.')
-                else:
-                    print('Game files require an update. Update them now?')
-                    userInput: str = input('Y/N >> ')
-                    if userInput.lower() == 'y':
-                        updated = True
-                        patcher.run()
-                        print('Game has been updated.')
-        
-        acc: str = input('Account ID >> ')
-        if not acc.isnumeric():
-            print('Invalid account ID format.')
-            continue
-        
-        toon: str = input('Toon ID >> ')
-        if not toon.isnumeric():
-            toon = -1
-
-        district: str = input('Target District >> ')
-
-        launcher = ClashLauncher(int(acc), int(toon), district)
-
-        while True:
-            launcher.connect()
-            print('Reconnect?')
-            userInput = input('Y/N >> ')
-            if not userInput.lower() == 'y':
-                break
-    elif userInput.lower() in {'update', 'patch'}:
-        print('Checking for update...')
-        if not patcher.isGameUpdated():
+if args.update or args.updateloop:
+    while True:
+        from datetime import datetime
+        now = datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        print(current_time, '| Checking for update...')
+        if not pa.isGameUpdated():
             print('Local files are old, update them?')
             userInput: str = input('Y/N >> ')
-            
             if userInput.lower() == 'y':
                 updated = True
-                patcher.run()
-                print('Game has been updated.')
-        else:
-            updated = True
-            print('Game is already up-to-date.')
-    elif userInput.lower() == 'updateloop':
-        while(True):
-            from datetime import datetime
+                pa.run()
+            sys.exit()
+        if args.update:
+            print('Gamefiles are up to date.')
+            sys.exit()
 
-            now = datetime.now()
-
-            current_time = now.strftime("%H:%M:%S")
-            print(current_time, '| Checking for update (loop)...')
-            if not patcher.isGameUpdated():
-                print('Local files are old, update them?')
-                userInput: str = input('Y/N >> ')
-                
-                if userInput.lower() == 'y':
-                    updated = True
-                    patcher.run()
-                    print('Game has been updated.')
-                    
-                break
-    elif userInput.lower() == 'help':
-        print('Corporate Clash Launcher by luna#4811\n\tlogin - Login to the game.\n\tpatch - Update game files.\n\thelp - Display this text.\n\tquit - Exit the program.')
-    elif userInput == '':
-        print('Type \'help\' for commands.')
+print('No parameters? Use --account to log into the game, or use --update to update the game. Use -h for a list of all commands.')

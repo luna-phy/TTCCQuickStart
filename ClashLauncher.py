@@ -4,7 +4,7 @@ class ClashLauncher:
     gamePath = os.getenv('LOCALAPPDATA') + '\\Corporate Clash\\'
     gameAPIPath = 'https://corporateclash.net/api/v1/login/'
     gameserver = 'gs.corporateclash.net'
-    accountsJsonPath = 'accounts.json'
+    accountsJsonPath = os.path.dirname(__file__) + '\\accounts.json'
 
     defaultJson = {'accounts': [{'username': 'username', 'password': 'password'}, {'username': 'username2', 'password': 'password2'}], 'params': {'realm': 'production', 'districts': ['Anvil Acres', 'Cupcake Cove', 'Quicksand Quarry', 'Tesla Tundra', 'High-Dive Hills', 'Hypno Heights', 'Seltzer Summit', 'Kazoo Kanyon']}}
 
