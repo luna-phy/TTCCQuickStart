@@ -7,6 +7,8 @@ ap = argparse.ArgumentParser(prog = 'launcher', description = 'Command-Line Laun
 ap.add_argument('--account', '-a', type = int, help = "Specifies an account to use to log in.")
 ap.add_argument('--toon', '-t', type = int, help = "Specifies a toon, by index, to use to log in. 0 is top left, 5 is bottom right.")
 ap.add_argument('--district', '-d', type = str, help = "Specifies a target district to log into. No district will launch the main menu page. Use '--district any' to guarantee a random district.")
+ap.add_argument('--realm', '-r', type = str, help = "Forces a target realm to try to log into, overriding accounts.json. If unsure, don't use this flag.")
+ap.add_argument('--continuous', '-c', action = 'store_true', help = "Will attempt to keep trying to relog into the game upon disconnecting or crashing.")
 
 up = ap.add_mutually_exclusive_group()
 up.add_argument('--forceupdate', '-fu', action = 'store_true', help = "Launch the game after forcing an update check.")
@@ -31,7 +33,13 @@ if args.account is not None:
     if args.forceupdate:
         pa.run()
 
-    ClashLauncher(ac, toon, dist).connect()
+    lc = ClashLauncher(ac, toon, dist)
+    lc.overrideRealm(args.realm)
+    while True:
+        lc.connect()
+        if not args.continuous:
+            break
+        print('----------------------------------------\nReconnecting due to "--continuous" flag.\n----------------------------------------')
     sys.exit()
 if args.toon:
     print('Warning: Toon was specified without an account, ignoring.')

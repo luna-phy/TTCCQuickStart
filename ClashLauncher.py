@@ -59,6 +59,9 @@ class ClashLauncher:
 
         self.targetToonID = str(toonID) if (-1 < toonID < 6) else ''
 
+    def overrideRealm(self, realm: str = 'production'):
+        self.targetRealm = realm if realm == 'qa' else 'production'
+
     def connect(self) -> bool:
         username = self.targetAccount['username']
         password = self.targetAccount['password']
