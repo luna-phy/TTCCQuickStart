@@ -9,7 +9,7 @@
 
 | Command | Description |
 | --- | --- |
-| `--account` | Used to specify an account index, takes an integer from 0, up to how many accounts you've specified in `accounts.json` - 1. |
+| `--account` | Used to specify an account index, takes an integer from 0, up to how many accounts specified in `config.json` - 1. |
 | `--toon` | Used to specify a Toon to log in with, with 0 being the top-left, 2 being the top-right, 3 being the bottom-left, and 5 being the bottom-right. |
 | `--district` | Used to specify a target district to log in with. Case-insensitive. |
 | `--forceupdate` | Forces the launcher to check for, and update game files, like the official launcher always does. Omission of this flag launches the game without checking for an update, which could be game-breaking. |
@@ -24,13 +24,13 @@
 
 `python main.py --account 0 --toon 3 --district tesla`
 
-The above command will log in using the first account specified in `accounts.json`, will use the Toon in the bottom-left slot, and will always use Tesla Tundra as the target district.
+The above command will log in using the first account specified in `config.json`, will use the Toon in the bottom-left slot, and will always use Tesla Tundra as the target district.
 
 `python main.py --account 2`
 
-The above command will log in using the third account specified in `accounts.json`, and will take the user to the main menu.
+The above command will log in using the third account specified in `config.json`, and will take the user to the main menu.
 
 ### Notes
  This program assumes the default directory installation for Corporate Clash, in the AppData/Local folder, and is only tested as such, meaning that only Windows has been tested.
 
- **WARNING!** This program does not provide any form of security, nor cryptography. This program leaves your usernames and passwords in plain-text within the `accounts.json` file. Please do not use this program if you intend on sharing your computer, or user, with someone else and you are concerned about account security.
+ **WARNING!** This program does not provide any form of security, nor cryptography, besides that given through tokenization offered by the Corporate Clash Team. That being said, by using this software, you agree to not hold liable myself, the Corporate Clash Team, or any other party for damages caused to you by misuse of this software, either by you, or an unauthorized user on your devices. This program leaves your usernames and tokens in plain-text within the `config.json` file. Please do not use this program if you intend on sharing your computer, or user, with someone else and you are concerned about account security.
