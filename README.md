@@ -13,9 +13,11 @@
 | `--toon` | Used to specify a Toon to log in with, with 0 being the top-left, 2 being the top-right, 3 being the bottom-left, and 5 being the bottom-right. |
 | `--district` | Used to specify a target district to log in with. Case-insensitive. |
 | `--forceupdate` | Forces the launcher to check for, and update game files, like the official launcher always does. Omission of this flag launches the game without checking for an update, which could be game-breaking. |
+| `--register` | Enables registration mode. Allows a user to enter a username and password to enable them for use with this launcher. |
+| `--username` | Works with `--register`. Bypasses user input, and uses the command line's input, instead. |
+| `--password` | Same as `--username`, but for the password field. |
 | `--update` | Checks for an update to game files, and prompts the user to update them, if an update exists. Does not launch the game. |
 | `--updateLoop` | Does the same as `--update` but will do so forever, until the program is closed, or the game is updated. |
-| `--realm` | Forces a target realm to try to log into, overriding settings from `accounts.json`. Uses default value if invalid realm is selected. |
 | `--continuous` | Will not terminate program upon logout or crash, and will instead immediately log in with the initial login details. |
 
 ### Sample Usage

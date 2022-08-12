@@ -1,79 +1,94 @@
 import os, requests, subprocess, json
 
 class ClashLauncher:
-    gamePath = os.getenv('LOCALAPPDATA') + '\\Corporate Clash\\'
-    gameAPIPath = 'https://corporateclash.net/api/v1/login/'
-    gameserver = 'gs.corporateclash.net'
-    accountsJsonPath = os.path.dirname(__file__) + '\\accounts.json'
+    localGamePath = os.getenv('LOCALAPPDATA') + '\\Corporate Clash\\'
+    APIRegtPath = 'https://corporateclash.net/api/launcher/v1/register'
+    APILognPath = 'https://corporateclash.net/api/launcher/v1/login'
+    APIDistPath = 'https://corporateclash.net/api/v1/districts.js'
+    APIMetaPath = 'https://corporateclash.net/api/v1/game_info.js'
+    gameServer = 'gs.corporateclash.net'
+    configPath = os.path.dirname(__file__) + '\\config.json'
 
-    defaultJson = {'accounts': [{'username': 'username', 'password': 'password'}, {'username': 'username2', 'password': 'password2'}], 'params': {'realm': 'production', 'districts': ['Anvil Acres', 'Cupcake Cove', 'Quicksand Quarry', 'Tesla Tundra', 'High-Dive Hills', 'Hypno Heights', 'Seltzer Summit', 'Kazoo Kanyon']}}
+    activeDistricts = []
+    accounts = []
 
-    targetAccount = ''
-    targetToonID = 1
+    targetAccount = 0
+    targetToonID = -1
     targetDistrict = ''
-    targetRealm = ''
 
-    def __init__(self, accID = 0, toonID = -1, district = ''):
-        if not os.path.exists(self.accountsJsonPath):
-            with open(self.accountsJsonPath, 'w') as file:
-                json.dump(self.defaultJson, file, indent = 4)
-            raise FileNotFoundError('%s does not exist. Generating default.' % self.accountsJsonPath)
-        else:
-            file = json.load(open(self.accountsJsonPath))
-
-        if 'accounts' in file:
-            if accID < 0:
-                accID = 0
-            if accID > len(file['accounts']):
-                accID = len(file['accounts']) - 1
-
-            if 'username' and 'password' in file['accounts'][accID]:
-                self.targetAccount = file['accounts'][accID]
-            else:
-                raise KeyError('Username and/or password field do not exist!')
-        else:
-            raise KeyError('No accounts found?')
-
-        if 'params' in file:
-            if 'realm' in file['params']:
-                self.targetRealm = file['params']['realm']
-            else:
-                self.targetRealm = 'production'
-            
-            if 'districts' not in file['params']:
-                raise KeyError('No districts found!')
-        else:
-            raise KeyError('No parameters found?')
-
-        for dst in file['params']['districts']:
-            if district == '':
-                break
-            
-            if district.lower() in dst.lower():
-                self.targetDistrict = dst
-                print('Using %s district.' % dst)
-                break
+    def __init__(self):
+        self.loadConfig()
+        self.getDistricts()
         
-        if self.targetDistrict == '':
-            print('Specified district does not exist, using random district.')
+        if not self.isGameOpen():
+            print('Warning: Gameserver closed.')
 
-        self.targetToonID = str(toonID) if (-1 < toonID < 6) else ''
+    def loadConfig(self):
+        if not os.path.exists(self.configPath):
+            with open(self.configPath, 'w') as file:
+                json.dump({}, file, indent = 4)
+            return
+        else:
+            file = json.load(open(self.configPath))
+        
+        for acc in file:
+            self.accounts.append(acc)
 
-    def overrideRealm(self, realm: str = 'production'):
-        self.targetRealm = realm if realm == 'qa' else 'production'
+    def saveConfig(self):
+        with open(self.configPath, 'w') as file:
+            json.dump(self.accounts, file, indent = 4)
 
-    def connect(self) -> bool:
-        username = self.targetAccount['username']
-        password = self.targetAccount['password']
-        response = requests.post(self.gameAPIPath + username, data = {'password': password}, headers = {'x-realm': self.targetRealm}).json()
+    def getDistricts(self):
+        districts = requests.get(self.APIDistPath).json()
+        if districts:
+            for district in districts:
+                if district['online']:
+                    self.activeDistricts.append(district['name'])
+
+        if not self.activeDistricts:
+            print('Warning: No active districts detected?')
+
+    def isGameOpen(self) -> tuple:
+        response = requests.get(self.APIMetaPath).json()
+        return (response['production_closed'], response['production_closed_reason'])
+
+    def register(self, username, password) -> bool:
+        if username in (elem for sublist in self.accounts for elem in sublist):
+            print('That account is already registered. If the token is invalid, delete it from the configuration.')
+            return False
+
+        response = requests.post(self.APIRegtPath, json = {'username': username, 'password': password, 'friendly': 'TTCCQuickstart'}).json()
+
+        print(response['message'])
+        if response['status']:
+            self.accounts.append((username, response['token']))
+            self.saveConfig()
+        return response['status']
+
+    def connect(self, accID, toonID, district) -> bool:
+        if not self.accounts:
+            print('No accounts. Have you registered an account with "--register"?')
+            return False
+
+        dispUN, token = self.accounts[accID]
+
+        print('Connecting with user "%s"...' % dispUN)
+        response = requests.post(self.APILognPath, headers = {'Authorization': f'Bearer {token}'}).json()
+        print(response['message'])
 
         if response['status']:
-            cookie = response['token']
+            # handle district select
+            targetDistrict = ''
+            for dist in self.activeDistricts:
+                if district == '':
+                    break
+                if district.lower() in dist.lower():
+                    targetDistrict = dist
+                    print('Using %s district.' % dist)
+                    break
+            
+            if targetDistrict == '':
+                print('Specified district does not exist, using random district.')
 
-            print('Login success. Server gave token {} ({})'.format(cookie, response['friendlyreason']))
-
-            subprocess.run(self.gamePath + 'CorporateClash.exe', cwd = self.gamePath, env = dict(os.environ, TT_GAMESERVER = self.gameserver, TT_PLAYCOOKIE = cookie, FORCE_TOON_SLOT = self.targetToonID, FORCE_DISTRICT = str(self.targetDistrict)))
-            return True
-        else:
-            print('Login failed. Server gave server code {} ({})'.format(response['reason'], response['friendlyreason']))
-            return False
+            subprocess.run(self.localGamePath + 'CorporateClash.exe', cwd = self.localGamePath, env = dict(os.environ, TT_GAMESERVER = self.gameServer, TT_PLAYCOOKIE = response['token'], FORCE_TOON_SLOT = str(toonID) if (-1 < toonID < 6) else '', FORCE_DISTRICT = targetDistrict))
+        return response['status']
