@@ -66,8 +66,12 @@ class ClashLauncher:
         return response['status']
 
     def connect(self, accID, toonID, district) -> bool:
+        # error handling
         if not self.accounts:
             print('No accounts. Have you registered an account with "--register"?')
+            return False
+        elif accID > len(self.accounts):
+            print('Account ID %i exceeds list of registered accounts. Current amount of accounts: %i' % (accID, len(self.accounts) + 1))
             return False
 
         dispUN, token = self.accounts[accID]
@@ -88,7 +92,14 @@ class ClashLauncher:
                     break
             
             if targetDistrict == '':
-                print('Specified district does not exist, using random district.')
+                print('Warning: Specified district does not exist, using random district.')
 
-            subprocess.run(self.localGamePath + 'CorporateClash.exe', cwd = self.localGamePath, env = dict(os.environ, TT_GAMESERVER = self.gameServer, TT_PLAYCOOKIE = response['token'], FORCE_TOON_SLOT = str(toonID) if (-1 < toonID < 6) else '', FORCE_DISTRICT = targetDistrict))
+            # handle toon select
+            if not (-1 < toonID < 6):
+                print('Warning: Toon ID out of bounds, ignoring.')
+            else:
+                print('Using Toon ID %i.' % toonID)
+            toonSlot = str(toonID) if (-1 < toonID < 6) else ''
+
+            subprocess.run(self.localGamePath + 'CorporateClash.exe', cwd = self.localGamePath, env = dict(os.environ, TT_GAMESERVER = self.gameServer, TT_PLAYCOOKIE = response['token'], FORCE_TOON_SLOT = toonSlot, FORCE_DISTRICT = targetDistrict))
         return response['status']
