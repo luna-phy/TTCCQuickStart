@@ -1,7 +1,7 @@
 from ClashLauncher import ClashLauncher
 from ClashPatcher import ClashPatcher
 
-import argparse, sys
+import argparse, sys, time
 ap = argparse.ArgumentParser(prog = 'launcher', description = 'Command-Line Launcher for Corporate Clash, by luna#4811', allow_abbrev = False)
 
 ap.add_argument('--account', '-a', type = int, help = "Specifies an account to use to log in.")
@@ -38,10 +38,11 @@ if args.account is not None:
     dist = ''
     if args.toon is not None:
         toon = args.toon
-    if args.district.lower() == 'any':
-        dist = ''
-    elif args.district is not None:
-        dist = args.district
+    if args.district is not None:      
+        if args.district.lower() == 'any':
+            dist = ''
+        else:
+            dist = args.district
 
     if args.forceupdate:
         pa.run()
@@ -50,7 +51,9 @@ if args.account is not None:
         lc.connect(ac, toon, dist)
         if not args.continuous:
             break
-        print('----------------------------------------\nReconnecting due to "--continuous" flag.\n----------------------------------------')
+        for i in reversed(range(5)):
+            print('Reconnecting in %i...' % (i + 1))
+            time.sleep(1.0)
     sys.exit()
 if args.toon:
     print('Warning: Toon was specified without an account, ignoring.')
