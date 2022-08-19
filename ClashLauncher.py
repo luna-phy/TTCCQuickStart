@@ -93,8 +93,8 @@ class ClashLauncher:
         if not self.accounts:
             print('No accounts. Have you registered an account with "--register"?')
             return False
-        elif accID > len(self.accounts):
-            print('Account ID %i exceeds list of registered accounts. Current amount of accounts: %i' % (accID, len(self.accounts) + 1))
+        elif accID > len(self.accounts) - 1:
+            print('Account ID %i exceeds list of registered accounts. Current amount of accounts: %i' % (accID, len(self.accounts)))
             return False
 
         dispUN, token = list(self.accounts)[accID], list(self.accounts.values())[accID]
