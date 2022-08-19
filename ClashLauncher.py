@@ -6,11 +6,15 @@ class ClashLauncher:
     APILognPath = 'https://corporateclash.net/api/launcher/v1/login'
     APIDistPath = 'https://corporateclash.net/api/v1/districts.js'
     APIMetaPath = 'https://corporateclash.net/api/v1/game_info.js'
+    APIRevoPath = 'https://corporateclash.net/api/launcher/v1/revoke_self'
     gameServer = 'gs.corporateclash.net'
     configPath = os.path.dirname(__file__) + '\\config.json'
 
     activeDistricts = []
-    accounts = []
+
+    # dictionaries to write to the config.json file
+    accounts = {}       # stores all account usernames/tokens
+    options = {}        # stores user-defined launch settings
 
     targetAccount = 0
     targetToonID = -1
@@ -18,25 +22,39 @@ class ClashLauncher:
 
     def __init__(self):
         self.loadConfig()
+        self.handleOptions()
         self.getDistricts()
         
-        if not self.isGameOpen():
-            print('Warning: Gameserver closed.')
+        if not self.isGameOpen()[0]:
+            print('Warning: Gameserver closed (%s).' % self.isGameOpen()[1])
 
     def loadConfig(self):
-        if not os.path.exists(self.configPath):
-            with open(self.configPath, 'w') as file:
-                json.dump({}, file, indent = 4)
-            return
-        else:
+        try:
             file = json.load(open(self.configPath))
-        
-        for acc in file:
-            self.accounts.append(acc)
+
+            self.accounts = file["accounts"]
+            self.options = file["options"]
+        except:
+            with open(self.configPath, 'w') as file:
+                json.dump({"accounts": {}, "options": {}}, file, indent = 4)
+                print('Generated empty config.json file.')
+            return
+
+    def handleOptions(self):
+        userPreferences = json.load(open(self.localGamePath + 'preferences.json'))
+        if not self.options:
+            return
+
+        for option, value in self.options.items():
+            userPreferences[option] = value
+
+        with open(self.localGamePath + 'preferences.json', 'w') as file:
+            json.dump(userPreferences, file, indent = 4)
+        self.saveConfig()
 
     def saveConfig(self):
         with open(self.configPath, 'w') as file:
-            json.dump(self.accounts, file, indent = 4)
+            json.dump({"accounts": self.accounts, "options": self.options}, file, indent = 4)
 
     def getDistricts(self):
         districts = requests.get(self.APIDistPath).json()
@@ -50,18 +68,23 @@ class ClashLauncher:
 
     def isGameOpen(self) -> tuple:
         response = requests.get(self.APIMetaPath).json()
-        return (response['production_closed'], response['production_closed_reason'])
+        return (not response['production_closed'], response['production_closed_reason'])
 
     def register(self, username, password) -> bool:
-        if username in (elem for sublist in self.accounts for elem in sublist):
-            print('That account is already registered. If the token is invalid, delete it from the configuration.')
-            return False
+        # if the current username trying to be registered exists in config.json, revoke that token, tell the server to revoke it, and replace it with a newly given token
+        # if the user somehow has an expired token (like if they revoked it manually before using it), give a new token and replace it anyways
+        if username in self.accounts.keys():
+            revoke = requests.post(self.APIRevoPath, headers = {'Authorization': f'Bearer {self.accounts[username]}'}).json()
+            if 'bad_token' in revoke:
+                print(f'Revoking old token (expired) for username {username}.')
+            elif 'status' in revoke:
+                print(f"Revoked old token for username {username}.")
 
         response = requests.post(self.APIRegtPath, json = {'username': username, 'password': password, 'friendly': 'TTCCQuickstart'}).json()
 
         print(response['message'])
         if response['status']:
-            self.accounts.append((username, response['token']))
+            self.accounts[username] = response['token']
             self.saveConfig()
         return response['status']
 
@@ -74,12 +97,16 @@ class ClashLauncher:
             print('Account ID %i exceeds list of registered accounts. Current amount of accounts: %i' % (accID, len(self.accounts) + 1))
             return False
 
-        dispUN, token = self.accounts[accID]
+        dispUN, token = list(self.accounts)[accID], list(self.accounts.values())[accID]
 
         print('Connecting with user "%s"...' % dispUN)
         response = requests.post(self.APILognPath, headers = {'Authorization': f'Bearer {token}'}).json()
-        print(response['message'])
 
+        if 'bad_token' in response:
+            print('Unauthorized token used. Try re-registering your account with --register.')
+            return False
+
+        print(response['message'])
         if response['status']:
             # handle district select
             targetDistrict = ''
@@ -103,3 +130,6 @@ class ClashLauncher:
 
             subprocess.run(self.localGamePath + 'CorporateClash.exe', cwd = self.localGamePath, env = dict(os.environ, TT_GAMESERVER = self.gameServer, TT_PLAYCOOKIE = response['token'], FORCE_TOON_SLOT = toonSlot, FORCE_DISTRICT = targetDistrict))
         return response['status']
+
+l = ClashLauncher()
+l.handleOptions()
